@@ -1,0 +1,17 @@
+image: python:3.11
+
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - echo "Demo app ready (no unit tests yet)"
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy not implemented yet"
+  when: manual

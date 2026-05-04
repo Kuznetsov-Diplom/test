@@ -1,10 +1,11 @@
-# biometric-face-preprocessor-demo
+# biometric-face-preprocessor — Live Demo
 
-Live Demo для библиотеки biometric-face-preprocessor
+Тестовое приложение для библиотеки `biometric-face-preprocessor`.
 
-## Как запустить
-
+## Запуск
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+Открывается на http://localhost:8501
