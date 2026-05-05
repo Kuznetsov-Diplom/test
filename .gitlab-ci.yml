@@ -2,16 +2,24 @@ image: python:3.11
 
 stages:
   - test
-  - deploy
+  - build
+
+variables:
+  GITLAB_REGISTRY_TOKEN: $CI_JOB_TOKEN   # автоматически доступен в CI
 
 test:
   stage: test
   script:
-    - pip install -r requirements.txt
-    - echo "Demo app ready (no unit tests yet)"
+    # Устанавливаем приватный пакет из Package Registry (Project ID=1)
+    - pip install --upgrade pip
+    - pip install --extra-index-url "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/api/v4/projects/1/packages/pypi/simple/" -r requirements.txt
+    - echo "✅ Все пакеты установлены, включая biometric-face-preprocessor"
+    - python -c "from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline; print('✅ Pipeline импортируется')"
 
-deploy:
-  stage: deploy
+build:
+  stage: build
   script:
-    - echo "Deploy not implemented yet"
+    - docker compose build --build-arg GITLAB_REGISTRY_TOKEN=${CI_JOB_TOKEN}
   when: manual
+  tags:
+    - docker
