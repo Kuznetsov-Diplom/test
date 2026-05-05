@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Системные зависимости для OpenCV
+# Системные зависимости для OpenCV + webrtc
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -10,9 +10,12 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
-# Установка из GitLab Package Registry (Project ID = 1)
+# Установка приватного пакета (работает и в CI, и локально)
+ARG GITLAB_REGISTRY_TOKEN
 RUN pip install --upgrade pip && \
-    pip install --extra-index-url https://gitlab.com/api/v4/projects/1/packages/pypi/simple/ -r requirements.txt
+    pip install \
+    --extra-index-url "https://gitlab-ci-token:${GITLAB_REGISTRY_TOKEN}@gitlab.com/api/v4/projects/1/packages/pypi/simple/" \
+    -r requirements.txt
 
 COPY . .
 
