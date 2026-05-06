@@ -2,8 +2,8 @@ import streamlit as st
 import cv2
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import av
-from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
-from biometric_face_preprocessor.pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
+from pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
+from pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
 
 st.set_page_config(page_title="biometric-face-preprocessor — Live Demo", layout="wide")
 st.title("🟢 biometric-face-preprocessor")
