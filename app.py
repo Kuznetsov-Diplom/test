@@ -73,5 +73,5 @@ col_btn1, col_btn2, col_btn3 = st.columns(3)
 col_btn1.button("🔄 Запустить заново", use_container_width=True)
 col_btn2.button("📸 Сохранить кадр", use_container_width=True)
 col_btn3.button("📤 Экспорт вектора", use_container_width=True, disabled=True)
-
+ 
 st.info("Пока работает только **Шаг 1: Детекция лица (MediaPipe)**. Остальные шаги добавим по plan.md.")
