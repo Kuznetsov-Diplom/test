@@ -7,10 +7,10 @@ build:
   tags:
     - host
   script:
-    - docker build --add-host=gitlab.local:host-gateway -t biometric-face-preprocessor-demo:latest .
+    - docker compose build
   cache:
     paths:
-      - /var/lib/docker/   # опционально, ускоряет повторные сборки
+      - /var/lib/docker/
 
 deploy:
   stage: deploy
@@ -18,4 +18,4 @@ deploy:
     - host
   script:
     - docker compose down --remove-orphans || true
-    - docker compose up -d --build --force-recreate
+    - docker compose up -d --force-recreate

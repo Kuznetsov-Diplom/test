@@ -4,10 +4,12 @@ services:
   biometric-demo:
     build:
       context: .
+      extra_hosts:
+        - "gitlab.local:host-gateway"
     ports:
       - "8501:8501"
     restart: unless-stopped
 
-    # Для разработки можно добавить volumes:
+    # Для разработки (можно раскомментировать):
     # volumes:
     #   - .:/app
