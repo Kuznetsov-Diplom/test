@@ -2,20 +2,23 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Системные зависимости для OpenCV + webrtc
+# Системные зависимости для OpenCV + MediaPipe + Streamlit-webrtc
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
-# Установка приватного пакета (работает и в CI, и локально)
-ARG GITLAB_REGISTRY_TOKEN
+# Build-arg для GitLab Package Registry (в CI передаём auth-URL)
+ARG EXTRA_INDEX_URL="http://gitlab.local/api/v4/projects/1/packages/pypi/simple"
+
+# Установка зависимостей
 RUN pip install --upgrade pip && \
-    pip install \
-    --extra-index-url "https://gitlab-ci-token:${GITLAB_REGISTRY_TOKEN}@gitlab.com/api/v4/projects/1/packages/pypi/simple/" \
-    -r requirements.txt
+    pip install --extra-index-url "${EXTRA_INDEX_URL}" -r requirements.txt
 
 COPY . .
 

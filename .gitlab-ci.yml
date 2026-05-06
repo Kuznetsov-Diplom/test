@@ -2,24 +2,33 @@ image: python:3.11
 
 stages:
   - test
-  - build
+  - deploy
 
 variables:
-  GITLAB_REGISTRY_TOKEN: $CI_JOB_TOKEN   # автоматически доступен в CI
+  PIP_NO_CACHE_DIR: "off"
+
+cache:
+  paths:
+    - .pip-cache/
 
 test:
   stage: test
   script:
-    # Устанавливаем приватный пакет из Package Registry (Project ID=1)
     - pip install --upgrade pip
-    - pip install --extra-index-url "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/api/v4/projects/1/packages/pypi/simple/" -r requirements.txt
-    - echo "✅ Все пакеты установлены, включая biometric-face-preprocessor"
-    - python -c "from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline; print('✅ Pipeline импортируется')"
+    - pip install --extra-index-url "http://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.local/api/v4/projects/1/packages/pypi/simple/" -r requirements.txt
+    - python -c '
+from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
+from biometric_face_preprocessor.pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
+print("✅ biometric-face-preprocessor imported successfully")
+print("✅ Pipeline and MediaPipeFaceDetector available")
+'
+    - echo "✅ Demo app ready (installation + imports verified)"
+  cache:
+    paths:
+      - .pip-cache/
 
-build:
-  stage: build
+deploy:
+  stage: deploy
   script:
-    - docker compose build --build-arg GITLAB_REGISTRY_TOKEN=${CI_JOB_TOKEN}
+    - echo "Deploy not implemented yet"
   when: manual
-  tags:
-    - docker
