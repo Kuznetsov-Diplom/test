@@ -13,11 +13,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
-# Build-arg для GitLab Package Registry (в CI передаём auth-URL)
-
-# Установка зависимостей
+# Установка из твоего local GitLab Package Registry (project ID=1)
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install --extra-index-url "http://gitlab.local/api/v4/projects/1/packages/pypi/simple/" --trusted-host gitlab.local -r requirements.txt
 
 COPY . .
 

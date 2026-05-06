@@ -1,38 +1,30 @@
-image: python:3.11
-
-stages:
-  - test
-  - deploy
+image: docker:24.0
+services:
+  - docker:24.0-dind
 
 variables:
-  PIP_NO_CACHE_DIR: "off"
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_DRIVER: overlay2
 
-cache:
-  paths:
-    - .pip-cache/
+stages:
+  - build
+  - deploy
 
-test:
-  stage: test
+build:
+  stage: build
+  tags:
+    - host
   script:
-    - pip config set global.index-url http://gitlab.local/api/v4/projects/1/packages/pypi/simple
-    - pip config set global.trusted-host gitlab.local
-    - pip install --upgrade pip
-    - pip install biometric-face-preprocessor
-    - pip install -r requirements.txt
-    - |
-      python -c '
-      from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
-      from biometric_face_preprocessor.pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
-      print("✅ biometric-face-preprocessor imported successfully")
-      print("✅ Pipeline and MediaPipeFaceDetector available")
-      '
-    - echo "✅ Demo app ready (installation + imports verified)"
+    - docker build -t biometric-face-preprocessor-demo:latest .
   cache:
     paths:
-      - .pip-cache/
+      - /var/lib/docker/
 
 deploy:
   stage: deploy
+  tags:
+    - host
   script:
-    - echo "Deploy not implemented yet"
+    - docker-compose down --remove-orphans || true
+    - docker-compose up -d --build --force-recreate
   when: manual
