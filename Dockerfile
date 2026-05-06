@@ -14,11 +14,10 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Build-arg для GitLab Package Registry (в CI передаём auth-URL)
-ARG EXTRA_INDEX_URL="http://gitlab.local/api/v4/projects/1/packages/pypi/simple"
 
 # Установка зависимостей
 RUN pip install --upgrade pip && \
-    pip install --extra-index-url "${EXTRA_INDEX_URL}" -r requirements.txt
+    pip install -r requirements.txt
 
 COPY . .
 

@@ -15,7 +15,7 @@ test:
   stage: test
   script:
     - pip install --upgrade pip
-    - pip install --extra-index-url "http://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.local/api/v4/projects/1/packages/pypi/simple/" -r requirements.txt
+    - pip install -r requirements.txt
     - |
       python -c '
       from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
