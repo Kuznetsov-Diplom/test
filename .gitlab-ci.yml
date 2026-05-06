@@ -14,7 +14,9 @@ cache:
 test:
   stage: test
   script:
+    - ls -la
     - pip install --upgrade pip
+    - pip install biometric-face-preprocessor
     - pip install -r requirements.txt
     - |
       python -c '
