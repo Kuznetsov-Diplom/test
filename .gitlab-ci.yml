@@ -16,12 +16,13 @@ test:
   script:
     - pip install --upgrade pip
     - pip install --extra-index-url "http://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.local/api/v4/projects/1/packages/pypi/simple/" -r requirements.txt
-    - python -c '
-from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
-from biometric_face_preprocessor.pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
-print("✅ biometric-face-preprocessor imported successfully")
-print("✅ Pipeline and MediaPipeFaceDetector available")
-'
+    - |
+      python -c '
+      from biometric_face_preprocessor.pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
+      from biometric_face_preprocessor.pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
+      print("✅ biometric-face-preprocessor imported successfully")
+      print("✅ Pipeline and MediaPipeFaceDetector available")
+      '
     - echo "✅ Demo app ready (installation + imports verified)"
   cache:
     paths:
