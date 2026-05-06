@@ -3,6 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt .
+COPY .pypirc .
 
 # Установка из твоего local GitLab Package Registry (project ID=1)
 RUN pip install --upgrade pip && \
