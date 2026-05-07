@@ -19,11 +19,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libxcb-shm0 \
     && rm -rf /var/lib/apt/lists/*
 
-# === Python зависимости (кэшируется pip + extra-index) ===
-COPY requirements.txt .
+# === Python зависимости ===
+COPY requirements-base.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install --extra-index-url "http://gitlab.local/api/v4/projects/1/packages/pypi/simple/" \
+    pip install --no-cache-dir -r requirements-base.txt
+
+# === 2. Только твоя библиотека ===
+COPY requirements.txt .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir \
+                --extra-index-url "http://gitlab.local/api/v4/projects/1/packages/pypi/simple/" \
                 --trusted-host gitlab.local \
                 -r requirements.txt
 
