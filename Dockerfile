@@ -1,9 +1,11 @@
+# syntax=docker/dockerfile:1
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Полный набор системных библиотек для OpenCV + MediaPipe в slim-образе
-RUN apt-get update && apt-get install -y \
+# === Системные зависимости (кэшируется) ===
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
@@ -17,16 +19,16 @@ RUN apt-get update && apt-get install -y \
     libxcb-shm0 \
     && rm -rf /var/lib/apt/lists/*
 
+# === Python зависимости (кэшируется pip + extra-index) ===
 COPY requirements.txt .
-
-# Установка из local GitLab Package Registry
-RUN pip install --upgrade pip && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
     pip install --extra-index-url "http://gitlab.local/api/v4/projects/1/packages/pypi/simple/" \
-                --trusted-host gitlab.local -r requirements.txt
+                --trusted-host gitlab.local \
+                -r requirements.txt
 
 COPY . .
 
 EXPOSE 8501
 
-# Добавил info-логирование, чтобы сразу видеть, что приложение стартовало
 CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--logger.level=info"]
