@@ -1,4 +1,4 @@
-biometric-face-preprocessor==0.4.0
+biometric-face-preprocessor==0.4.1
 streamlit==1.38.0
 streamlit-webrtc
 opencv-python-headless
