@@ -1,15 +1,14 @@
 version: '3.8'
 
 services:
-  biometric-demo:
-    build:
-      context: .
-      extra_hosts:
-        - "gitlab.local:host-gateway"
+  app:
+    build: .
+    container_name: biometric-streamlit
     ports:
       - "8501:8501"
+    volumes:
+      - ./certs:/app/certs:ro
+    environment:
+      - STREAMLIT_SERVER_SSL_CERT_FILE=/app/certs/cert.pem
+      - STREAMLIT_SERVER_SSL_KEY_FILE=/app/certs/key.pem
     restart: unless-stopped
-
-    # Для разработки (можно раскомментировать):
-    # volumes:
-    #   - .:/app
