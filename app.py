@@ -2,60 +2,90 @@ import streamlit as st
 import cv2
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import av
+import numpy as np
+
 from pipeline_models.biometric_pipeline import BiometricPreprocessorPipeline
 from pipeline_models.frame_preprocessor import FramePreprocessor
 from pipeline_models.mediapipe_face_detector import MediaPipeFaceDetector
+from pipeline_models.face_geometric_normalizer import FaceGeometricNormalizer
 
-st.set_page_config(
-    page_title="biometric-face-preprocessor — Live Demo",
-    layout="wide"
-)
+st.set_page_config(page_title="biometric-face-preprocessor — Live Demo", layout="wide")
 st.title("biometric-face-preprocessor")
-st.caption("Live-камера + пайплайн по ГОСТ Р 52633 (Шаг 1 + Шаг 2)")
+st.caption("Live-камера + полный пайплайн по ГОСТ Р 52633 (шаги 1–3)")
 
 # Инициализация пайплайна один раз
 if "pipeline" not in st.session_state:
     pipeline = BiometricPreprocessorPipeline()
-    preprocessor = FramePreprocessor(use_grayscale=True)
-    detector = MediaPipeFaceDetector(min_detection_confidence=0.85, padding_ratio=0.15)
-    pipeline.add_step(preprocessor)
-    pipeline.add_step(detector)
+    pipeline.add_step(FramePreprocessor(use_grayscale=True))
+    pipeline.add_step(MediaPipeFaceDetector(min_detection_confidence=0.85, padding_ratio=0.15))
+    pipeline.add_step(FaceGeometricNormalizer(target_size=224))
     st.session_state.pipeline = pipeline
 
 pipeline = st.session_state.pipeline
 
-# Боковая панель
-st.sidebar.header("Пайплайн")
-step_names = [step.name for step in pipeline.steps]
-current_step_name = st.sidebar.selectbox("Текущий шаг", step_names, index=0)
+# ====================== БОКОВАЯ ПАНЕЛЬ ======================
+st.sidebar.header("Управление пайплайном")
 
-# Параметры шагов
-if current_step_name == "frame_preprocessing":
+# Выбор, результат какого шага показывать
+preview_options = ["raw", "frame_preprocessing", "face_detection", "geometric_normalization"]
+preview_step = st.sidebar.selectbox(
+    "Отображать результат после шага",
+    preview_options,
+    index=3,  # по умолчанию — после выравнивания
+    help="raw = чистая камера, дальше — результат каждого шага"
+)
+
+# Параметры текущего шага
+st.sidebar.subheader("Параметры текущего шага")
+current_step = pipeline.steps[preview_options.index(preview_step) if preview_step != "raw" else 0]
+
+if preview_step == "frame_preprocessing":
     clahe_clip = st.sidebar.slider("CLAHE clip_limit", 0.0, 5.0, 2.0, 0.1)
-    pipeline.update_step_params(current_step_name, clahe_clip_limit=clahe_clip)
     use_gray = st.sidebar.checkbox("Use grayscale", value=True)
-    pipeline.update_step_params(current_step_name, use_grayscale=use_gray)
 
-elif current_step_name == "face_detection":
+elif preview_step == "face_detection":
     conf = st.sidebar.slider("min_detection_confidence", 0.5, 1.0, 0.85, 0.05)
-    pipeline.update_step_params(current_step_name, min_detection_confidence=conf)
     pad = st.sidebar.slider("ROI padding ratio", 0.05, 0.30, 0.15, 0.01)
-    pipeline.update_step_params(current_step_name, padding_ratio=pad)
 
-# === ОБРАБОТКА КАДРОВ ===
+elif preview_step == "geometric_normalization":
+    target_size = st.sidebar.slider("Target size (px)", 160, 320, 224, 16)
+    target_ipd = st.sidebar.slider("Target inter-pupil distance", 60.0, 140.0, 100.0, 1.0)
+
+# Кнопка «Применить параметры» (чтобы не лагало на каждый слайдер)
+if st.sidebar.button("Применить параметры", type="primary", use_container_width=True):
+    if preview_step == "frame_preprocessing":
+        pipeline.update_step_params("frame_preprocessing",
+                                    clahe_clip_limit=clahe_clip,
+                                    use_grayscale=use_gray)
+    elif preview_step == "face_detection":
+        pipeline.update_step_params("face_detection",
+                                    min_detection_confidence=conf,
+                                    padding_ratio=pad)
+    elif preview_step == "geometric_normalization":
+        pipeline.update_step_params("geometric_normalization",
+                                    target_size=target_size,
+                                    target_inter_pupil_distance=target_ipd)
+    st.sidebar.success("Параметры применены!")
+    st.rerun()
+
+# ====================== ОБРАБОТКА КАДРОВ ======================
 def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
-    """Обрабатывает каждый кадр через наш пайплайн (оба шага)"""
     img = frame.to_ndarray(format="bgr24")
-    context = pipeline.process_single_frame(img)
-    overlay = pipeline.get_overlay_frame(context)   # теперь рисует bbox + 468 ландмарков
-    return av.VideoFrame.from_ndarray(overlay, format="bgr24")
+    
+    # process_single_frame с остановкой после нужного шага
+    context = pipeline.process_single_frame(img, stop_after_step=None if preview_step == "raw" else preview_step)
+    
+    # get_preview_frame возвращает именно ту картинку, которую выбрал пользователь
+    preview = pipeline.get_preview_frame(context, preview_step)
+    
+    return av.VideoFrame.from_ndarray(preview, format="bgr24")
 
 
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.subheader("Серверная камера — Live")
-    ctx = webrtc_streamer(
+    st.subheader("Live-камера")
+    webrtc_streamer(
         key="biometric",
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=RTCConfiguration(
@@ -67,18 +97,10 @@ with col1:
     )
 
 with col2:
-    st.subheader("Статус пайплайна")
-    st.info("✅ Работают 2 шага: frame_preprocessing → face_detection")
-    st.metric("Face detected • Confidence", f"{getattr(pipeline, 'last_confidence', 0):.2f}")
+    st.subheader("Статус")
+    st.info(f"Текущий preview: **{preview_step}**")
+    st.metric("Confidence", f"{getattr(pipeline, 'last_confidence', 0):.2f}")
     st.metric("ROI size", f"{getattr(pipeline, 'last_roi_size', (0, 0))}")
-    st.metric("Стабилизация", "100%")
-    st.progress(0.85)
-    st.caption("Шаги: frame_preprocessing → face_detection | FPS ≈ 25–30")
+    st.caption("Параметры применяются по кнопке «Применить параметры»")
 
-# Кнопки
-col_btn1, col_btn2, col_btn3 = st.columns(3)
-col_btn1.button("Запустить заново", use_container_width=True)
-col_btn2.button("Сохранить кадр", use_container_width=True)
-col_btn3.button("Экспорт вектора", use_container_width=True, disabled=True)
-
-st.info("Приложение полностью готово под библиотеку 0.4.2. Следующий этап — геометрическая нормализация (шаг 3 по plan.md).")
+st.info("✅ Приложение теперь полностью поддерживает выбор шага в реальном времени + изменение параметров.")
