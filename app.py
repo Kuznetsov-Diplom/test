@@ -13,7 +13,7 @@ st.set_page_config(page_title="biometric-face-preprocessor — Live Demo", layou
 st.title("biometric-face-preprocessor")
 st.caption("Live-камера + полный пайплайн по ГОСТ Р 52633 (шаги 1–3)")
 
-# Инициализация пайплайна один раз
+# Инициализация пайплайна
 if "pipeline" not in st.session_state:
     pipeline = BiometricPreprocessorPipeline()
     pipeline.add_step(FramePreprocessor(use_grayscale=True))
@@ -26,18 +26,17 @@ pipeline = st.session_state.pipeline
 # ====================== БОКОВАЯ ПАНЕЛЬ ======================
 st.sidebar.header("Управление пайплайном")
 
-# Выбор, результат какого шага показывать
+# Выбор шага для отображения
 preview_options = ["raw", "frame_preprocessing", "face_detection", "geometric_normalization"]
 preview_step = st.sidebar.selectbox(
     "Отображать результат после шага",
     preview_options,
-    index=3,  # по умолчанию — после выравнивания
-    help="raw = чистая камера, дальше — результат каждого шага"
+    index=3,
+    help="raw = чистая камера"
 )
 
-# Параметры текущего шага
+# Параметры текущего шага (только если не raw)
 st.sidebar.subheader("Параметры текущего шага")
-current_step = pipeline.steps[preview_options.index(preview_step) if preview_step != "raw" else 0]
 
 if preview_step == "frame_preprocessing":
     clahe_clip = st.sidebar.slider("CLAHE clip_limit", 0.0, 5.0, 2.0, 0.1)
@@ -51,7 +50,7 @@ elif preview_step == "geometric_normalization":
     target_size = st.sidebar.slider("Target size (px)", 160, 320, 224, 16)
     target_ipd = st.sidebar.slider("Target inter-pupil distance", 60.0, 140.0, 100.0, 1.0)
 
-# Кнопка «Применить параметры» (чтобы не лагало на каждый слайдер)
+# Кнопка применения параметров
 if st.sidebar.button("Применить параметры", type="primary", use_container_width=True):
     if preview_step == "frame_preprocessing":
         pipeline.update_step_params("frame_preprocessing",
@@ -65,19 +64,17 @@ if st.sidebar.button("Применить параметры", type="primary", us
         pipeline.update_step_params("geometric_normalization",
                                     target_size=target_size,
                                     target_inter_pupil_distance=target_ipd)
-    st.sidebar.success("Параметры применены!")
+    st.sidebar.success("✅ Параметры применены")
     st.rerun()
 
 # ====================== ОБРАБОТКА КАДРОВ ======================
 def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
     img = frame.to_ndarray(format="bgr24")
-    
-    # process_single_frame с остановкой после нужного шага
-    context = pipeline.process_single_frame(img, stop_after_step=None if preview_step == "raw" else preview_step)
-    
-    # get_preview_frame возвращает именно ту картинку, которую выбрал пользователь
+    # Останавливаем пайплайн на выбранном шаге
+    stop_step = None if preview_step == "raw" else preview_step
+    context = pipeline.process_single_frame(img, stop_after_step=stop_step)
+    # Получаем нужную картинку
     preview = pipeline.get_preview_frame(context, preview_step)
-    
     return av.VideoFrame.from_ndarray(preview, format="bgr24")
 
 
@@ -99,8 +96,6 @@ with col1:
 with col2:
     st.subheader("Статус")
     st.info(f"Текущий preview: **{preview_step}**")
-    st.metric("Confidence", f"{getattr(pipeline, 'last_confidence', 0):.2f}")
-    st.metric("ROI size", f"{getattr(pipeline, 'last_roi_size', (0, 0))}")
-    st.caption("Параметры применяются по кнопке «Применить параметры»")
+    st.caption("Параметры применяются только после нажатия кнопки")
 
-st.info("✅ Приложение теперь полностью поддерживает выбор шага в реальном времени + изменение параметров.")
+st.success("✅ Ошибка IndexError исправлена. Теперь третий шаг (geometric_normalization) отображается корректно.")
