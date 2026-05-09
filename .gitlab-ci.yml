@@ -2,57 +2,49 @@ stages:
   - build
   - deploy
 
-variables:
-  IMAGE_NAME: $CI_REGISTRY_IMAGE:biometric-demo
-  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-
-# ==================== BUILD + PUSH ====================
+# ==================== BUILD (только сборка) ====================
 build:
   stage: build
   image: docker:24-cli
-  services:
-    - docker:24-dind
   variables:
-    DOCKER_HOST: tcp://docker:2375
+    DOCKER_HOST: unix:///var/run/docker.sock
     DOCKER_TLS_CERTDIR: ""
   tags:
     - docker
   script:
     - apk add --no-cache docker-compose
-    # Логинимся в GitLab Container Registry
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
-    # Полная сборка (с --no-cache для чистоты + используем build-arg)
-    - docker build
-      --no-cache
-      --pull
-      --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN
-      --add-host=gitlab.local:host-gateway
-      -t $IMAGE_NAME .
-    # Пушим в registry
-    - docker push $IMAGE_NAME
+    - docker build --no-cache --pull \
+      --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN \
+      --add-host=gitlab.local:host-gateway \
+      -t biometric-demo:latest .
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
 
-# ==================== DEPLOY ====================
+# ==================== DEPLOY (чистая пересборка + запуск) ====================
 deploy:
   stage: deploy
   image: docker:24-cli
-  services:
-    - docker:24-dind
   variables:
-    DOCKER_HOST: tcp://docker:2375
+    DOCKER_HOST: unix:///var/run/docker.sock
     DOCKER_TLS_CERTDIR: ""
   tags:
     - docker
   script:
     - apk add --no-cache docker-compose
-    # Логинимся в registry
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
-    # Pull'им собранный образ
-    - docker pull $IMAGE_NAME
-    # Останавливаем старый контейнер
+
+    # Полная чистая пересборка (гарантирует, что старый app.py с IndentationError не останется)
+    - docker build --no-cache --pull \
+      --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN \
+      --add-host=gitlab.local:host-gateway \
+      -t biometric-demo:latest .
+
+    # Очистка всего старого
     - docker compose down --remove-orphans || true
-    # Запускаем (теперь compose будет использовать уже собранный image)
-    - docker compose up -d --force-recreate
+    - docker builder prune -f --all || true
+    - docker system prune -f --all || true
+
+    # Запуск
+    - docker compose up -d --force-recreate --pull
+
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
