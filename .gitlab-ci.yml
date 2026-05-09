@@ -1,29 +1,7 @@
 stages:
-  - build
   - deploy
 
-# ==================== BUILD (только сборка) ====================
-build:
-  stage: build
-  image: docker:24-cli
-  variables:
-    DOCKER_HOST: unix:///var/run/docker.sock
-    DOCKER_TLS_CERTDIR: ""
-  tags:
-    - docker
-  script:
-    - apk add --no-cache docker-compose
-    - |
-      docker build \
-        --no-cache \
-        --pull \
-        --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN \
-        --add-host=gitlab.local:host-gateway \
-        -t biometric-demo:latest .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-
-# ==================== DEPLOY ====================
+# ==================== DEPLOY (единственная стадия) ====================
 deploy:
   stage: deploy
   image: docker:24-cli
@@ -35,7 +13,7 @@ deploy:
   script:
     - apk add --no-cache docker-compose
 
-    # Полная чистая пересборка (гарантирует свежий app.py)
+    # Полная чистая пересборка (гарантирует свежий app.py каждый раз)
     - |
       docker build \
         --no-cache \
@@ -49,7 +27,7 @@ deploy:
     - docker builder prune -f --all || true
     - docker system prune -f --all || true
 
-    # Запуск (исправленный флаг)
+    # Запуск
     - docker compose up -d --force-recreate --pull always
 
   rules:
