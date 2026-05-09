@@ -101,17 +101,12 @@ with col1:
                     {"urls": ["stun:stun2.l.google.com:19302"]},
                     {"urls": ["stun:stun3.l.google.com:19302"]},
                     {"urls": ["stun:stun4.l.google.com:19302"]},
-                    {"urls": ["stun:stun.stunprotocol.org:3478"]},
-                    {"urls": ["stun:stun.voipgate.com:3478"]},
-                    {"urls": ["stun:stun.voipstunt.com:3478"]},
                 ]
             }
         ),
         video_frame_callback=video_frame_callback,
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
-        desired_playing_state=True,
-        rtc_configuration_update=True,
     )
 
 with col2:
