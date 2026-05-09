@@ -1,7 +1,7 @@
 stages:
   - deploy
 
-# ==================== DEPLOY (единственная стадия) ====================
+# ==================== DEPLOY (единственная стадия — максимально быстро) ====================
 deploy:
   stage: deploy
   image: docker:24-cli
@@ -13,7 +13,7 @@ deploy:
   script:
     - apk add --no-cache docker-compose
 
-    # Полная чистая пересборка (гарантирует свежий app.py каждый раз)
+    # Полная чистая пересборка (гарантирует свежий app.py)
     - |
       docker build \
         --no-cache \
@@ -22,8 +22,8 @@ deploy:
         --add-host=gitlab.local:host-gateway \
         -t biometric-demo:latest .
 
-    # Запуск
-    - docker compose up -d --force-recreate --pull always
+    # Запуск БЕЗ --pull always (образ уже собран локально)
+    - docker compose up -d --force-recreate
 
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
