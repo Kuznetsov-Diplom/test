@@ -1,7 +1,11 @@
 services:
   biometric-demo:
-    image: $CI_REGISTRY_IMAGE:biometric-demo   # ← добавь эту строку
+    # Используем локальный образ, который собирается в CI
+    image: biometric-demo:latest
     ports:
       - "8501:8501"
     restart: unless-stopped
-    # volumes: ... (для dev можно оставить)
+    # Для разработки можно раскомментировать:
+    # volumes:
+    #   - .:/app
+    #   - /app/__pycache__:/app/__pycache__
