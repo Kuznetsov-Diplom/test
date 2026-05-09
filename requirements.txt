@@ -1,1 +1,1 @@
-biometric-face-preprocessor==0.4.9
+biometric-face-preprocessor==0.4.10
