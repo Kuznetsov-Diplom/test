@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir \
-                --extra-index-url "http://gitlab.local/api/v4/projects/1/packages/pypi/simple/" \
+                --extra-index-url "http://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.local/api/v4/projects/1/packages/pypi/simple/" \
                 --trusted-host gitlab.local \
                 -r requirements.txt
 
