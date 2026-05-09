@@ -1,15 +1,7 @@
-version: '3.8'
-
 services:
   biometric-demo:
-    build:
-      context: .
-      extra_hosts:
-        - "gitlab.local:host-gateway"
+    image: $CI_REGISTRY_IMAGE:biometric-demo   # ← добавь эту строку
     ports:
       - "8501:8501"
     restart: unless-stopped
-
-    # Для разработки (можно раскомментировать):
-    # volumes:
-    #   - .:/app
+    # volumes: ... (для dev можно оставить)
