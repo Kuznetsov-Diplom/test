@@ -90,7 +90,7 @@ col1, col2 = st.columns([3, 1])
 
 with col1:
     st.subheader("Live-камера")
-       webrtc_streamer(
+    webrtc_streamer(
         key="biometric",
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=RTCConfiguration(
