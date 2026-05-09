@@ -86,35 +86,35 @@ def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
     return av.VideoFrame.from_ndarray(preview, format="bgr24")
 
 
-    col1, col2 = st.columns([3, 1])
+col1, col2 = st.columns([3, 1])
 
-    with col1:
-        st.subheader("Live-камера")
-        webrtc_streamer(                    # ← теперь правильный отступ 4 пробела
-            key="biometric",
-            mode=WebRtcMode.SENDRECV,
-            rtc_configuration=RTCConfiguration(
-                {
-                    "iceServers": [
-                        {"urls": ["stun:stun.l.google.com:19302"]},
-                        {"urls": ["stun:stun1.l.google.com:19302"]},
-                        {"urls": ["stun:stun2.l.google.com:19302"]},
-                        {"urls": ["stun:stun3.l.google.com:19302"]},
-                        {"urls": ["stun:stun4.l.google.com:19302"]},
-                        {"urls": ["stun:stun.stunprotocol.org:3478"]},
-                        {"urls": ["stun:stun.voipgate.com:3478"]},
-                        {"urls": ["stun:stun.voipstunt.com:3478"]},
-                    ]
-                }
-            ),
-            video_frame_callback=video_frame_callback,
-            media_stream_constraints={"video": True, "audio": False},
-            async_processing=True,
-            desired_playing_state=True,
-            rtc_configuration_update=True,
-        )
+with col1:
+    st.subheader("Live-камера")
+    webrtc_streamer(
+        key="biometric",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=RTCConfiguration(
+            {
+                "iceServers": [
+                    {"urls": ["stun:stun.l.google.com:19302"]},
+                    {"urls": ["stun:stun1.l.google.com:19302"]},
+                    {"urls": ["stun:stun2.l.google.com:19302"]},
+                    {"urls": ["stun:stun3.l.google.com:19302"]},
+                    {"urls": ["stun:stun4.l.google.com:19302"]},
+                    {"urls": ["stun:stun.stunprotocol.org:3478"]},
+                    {"urls": ["stun:stun.voipgate.com:3478"]},
+                    {"urls": ["stun:stun.voipstunt.com:3478"]},
+                ]
+            }
+        ),
+        video_frame_callback=video_frame_callback,
+        media_stream_constraints={"video": True, "audio": False},
+        async_processing=True,
+        desired_playing_state=True,
+        rtc_configuration_update=True,
+    )
 
-    with col2:
-        st.subheader("Статус")
-        st.info(f"Текущий preview: **{preview_step}**")
-        st.caption("Параметры применяются только после нажатия кнопки"))
+with col2:
+    st.subheader("Статус")
+    st.info(f"Текущий preview: **{preview_step}**")
+    st.caption("Параметры применяются только после нажатия кнопки")
