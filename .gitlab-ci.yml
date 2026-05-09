@@ -22,11 +22,6 @@ deploy:
         --add-host=gitlab.local:host-gateway \
         -t biometric-demo:latest .
 
-    # Очистка старого
-    - docker compose down --remove-orphans || true
-    - docker builder prune -f --all || true
-    - docker system prune -f --all || true
-
     # Запуск
     - docker compose up -d --force-recreate --pull always
 
